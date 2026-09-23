@@ -1,5 +1,5 @@
 // Network first, cached copy when offline. Bump VERSION after big changes.
-const VERSION = 'rabbithole-v11';
+const VERSION = 'rabbithole-v12';
 const FILES = ['./', 'index.html', 'topics.json', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(VERSION).then(c => c.addAll(FILES))); self.skipWaiting(); });
 self.addEventListener('activate', e => {

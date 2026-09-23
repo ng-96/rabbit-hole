@@ -100,7 +100,7 @@ section.panel{margin-top:40px}
 .entry{padding:14px 0;border-top:1px solid var(--line)}
 .entry h3{font-size:1rem;font-weight:700;margin:0 0 2px}
 .entry .meta{font-size:.78rem;color:var(--soft);margin:0 0 6px}
-.entry p.k{margin:0;font-size:.95rem}
+.entry p.k{margin:0 0 6px;font-size:.95rem}
 .empty{color:var(--soft);font-size:.95rem}
 #topList h3{font-size:1rem;font-weight:800;margin:26px 0 8px}
 #topList ul{list-style:none;margin:0;padding:0}
@@ -172,8 +172,10 @@ footer .mark{width:22px;height:22px}
         <a class="textlink" id="rSearch" target="_blank" rel="noopener">Search the web instead</a>
       </div>
       <p class="done-note" id="rDone" hidden></p>
-      <label for="take">Your one-line takeaway</label>
-      <textarea id="take" maxlength="400" placeholder="The thing you would tell someone at lunch"></textarea>
+      <label for="take">Brief summary</label>
+      <textarea id="take" maxlength="1500" placeholder="A few sentences: what it is, and why it matters"></textarea>
+      <label for="use">Strongest use for teaching</label>
+      <textarea id="use" maxlength="800" placeholder="Where this lands best: a lesson, a staff meeting, a conversation with a student"></textarea>
       <div class="row">
         <button class="primary" id="markDone" disabled>Mark done</button>
         <span class="status" id="status"></span>
@@ -364,14 +366,16 @@ Three to five bullets naming the specific claims above that are most likely to b
     getPage(t.id).then(p=>{ if(current===t && p && p.md) $('readBtn').textContent='Open saved briefing'; });
     const e=log[t.id];
     $('take').value = e ? e.k : '';
+    $('use').value = e ? (e.use || '') : '';
     $('rDone').hidden=!e;
-    if(e) $('rDone').textContent='Done on '+fmt(e.t,true)+'. Edit the takeaway below if you learned more.';
-    $('markDone').textContent = e ? 'Update takeaway' : 'Mark done';
+    if(e) $('rDone').textContent='Done on '+fmt(e.t,true)+'. Edit below if you learned more.';
+    $('markDone').textContent = e ? 'Update' : 'Mark done';
     $('status').textContent='';
-    $('markDone').disabled = !$('take').value.trim();
+    gateDone();
     $('result').hidden=false;
   }
-  $('take').addEventListener('input',()=>{ $('markDone').disabled=!$('take').value.trim(); });
+  function gateDone(){ $('markDone').disabled = !($('take').value.trim() && $('use').value.trim()); }
+  $('take').addEventListener('input',gateDone); $('use').addEventListener('input',gateDone);
 
   // ---------- briefing view ----------
   function openBrief(){ $('home').hidden=true; $('brief').hidden=false; window.scrollTo(0,0); }
@@ -440,8 +444,8 @@ Three to five bullets naming the specific claims above that are most likely to b
     $('logSum').textContent = ids.length ? `${ids.length} done. `+per.map(x=>`${x.c} ${x.n}`).join(', ')+'.' : '';
     $('logList').innerHTML = ids.length ? ids.map(id=>{
       const t=byId[id], e=log[id];
-      return `<div class="entry"><h3>${esc(t.t)}</h3><p class="meta">${esc(catLabel(t))}, ${fmt(e.t)}</p><p class="k">${esc(e.k)}</p></div>`;
-    }).join('') : '<p class="empty">Nothing yet. Draw a card, go down it, and write your first takeaway.</p>';
+      return `<div class="entry"><h3>${esc(t.t)}</h3><p class="meta">${esc(catLabel(t))}, ${fmt(e.t)}</p><p class="k">${esc(e.k)}</p>${e.use?`<p class="k"><strong>For teaching:</strong> ${esc(e.use)}</p>`:''}</div>`;
+    }).join('') : '<p class="empty">Nothing yet. Draw a card, go down it, and write your first summary.</p>';
   }
   function renderTopics(){
     $('topSum').textContent = 'Tap one to open it.';
@@ -478,7 +482,7 @@ Three to five bullets naming the specific claims above that are most likely to b
       const body = await res.json(); if(body.error) throw new Error(body.error);
       const push = mergeIn(body.entries||{});
       if(push.length){
-        const rows = push.filter(id=>byId[id]).map(id=>({id, title:byId[id].t, category:catLabel(byId[id]), t:log[id].t, u:log[id].u||log[id].t, k:log[id].k}));
+        const rows = push.filter(id=>byId[id]).map(id=>({id, title:byId[id].t, category:catLabel(byId[id]), t:log[id].t, u:log[id].u||log[id].t, k:log[id].k, use:log[id].use||''}));
         const r2 = await fetch(settings.url, {method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body:JSON.stringify({token:settings.token, rows}), redirect:'follow'});
         const b2 = await r2.json(); if(b2.error) throw new Error(b2.error);
       }
@@ -517,9 +521,9 @@ Three to five bullets naming the specific claims above that are most likely to b
   });
   $('markDone').addEventListener('click', async ()=>{
     if(!current) return;
-    const k=$('take').value.trim(); if(!k) return;
+    const k=$('take').value.trim(), use=$('use').value.trim(); if(!k || !use) return;
     const prev=log[current.id], now=Date.now();
-    log[current.id]={t:prev?prev.t:now, u:now, k};
+    log[current.id]={t:prev?prev.t:now, u:now, k, use};
     store(LK,log); renderLog(); show(current);
     const n = doneCount();
     await trySync($('status'));
