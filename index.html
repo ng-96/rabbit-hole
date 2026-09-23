@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Rabbit Hole</title>
+<!--PWA-->
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Rabbit Hole">
+<!--/PWA-->
+<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#ffffff;--ink:#000000;--soft:#555555;--line:#d4d4d4;--panel:#f3f3f3;
+  box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+  color-scheme:light dark;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#000000;--ink:#ffffff;--soft:#a8a8a8;--line:#333333;--panel:#141414}}
+:root[data-theme="dark"]{--bg:#000000;--ink:#ffffff;--soft:#a8a8a8;--line:#333333;--panel:#141414}
+*,*::before,*::after{box-sizing:inherit}
+[hidden]{display:none !important}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Montserrat,"Helvetica Neue",Arial,sans-serif;line-height:1.5;-webkit-font-smoothing:antialiased}
+.wrap{max-width:560px;margin:0 auto;padding:20px 20px 64px}
+button{font:inherit;cursor:pointer}
+:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
+
+/* brand */
+.brand{display:flex;align-items:center;gap:10px}
+.mark{width:30px;height:30px;flex:none;display:block;color:var(--ink)}
+h1{font-size:1.5rem;font-weight:800;letter-spacing:-0.035em;margin:0;line-height:1;white-space:nowrap}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.tag{font-size:.85rem;color:var(--soft);margin:10px 0 0}
+nav{display:flex;gap:12px;white-space:nowrap}
+.linkbtn{background:none;border:0;color:var(--ink);font-weight:600;font-size:.84rem;padding:6px 0;text-decoration:underline;text-underline-offset:3px}
+
+/* deck */
+.deck{position:relative;height:230px;margin:30px 10px 0 0}
+.card{position:absolute;inset:0;border:2.5px solid var(--ink);border-radius:12px;background:var(--bg)}
+.card.b1{transform:translate(10px,10px)}
+.card.b2{transform:translate(5px,5px)}
+.card.b1,.card.b2{display:flex;align-items:flex-end;justify-content:flex-end;padding:10px}
+.front{padding:20px 20px 16px;display:flex;flex-direction:column;justify-content:space-between}
+.front .kc{font-size:.82rem;font-weight:700;color:var(--soft);margin:0}
+.front .kt{font-size:1.6rem;font-weight:800;letter-spacing:-0.025em;line-height:1.12;margin:0;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+.front .kf{display:flex;justify-content:space-between;align-items:center;font-size:.78rem;color:var(--soft);font-weight:600;min-height:22px}
+.front .kf .mark{width:20px;height:20px}
+.front.flip{animation:flip .09s ease-out}
+@keyframes flip{from{transform:translateY(-12px) rotate(-.6deg);opacity:.35}to{transform:none;opacity:1}}
+.front.landed{animation:land .35s cubic-bezier(.2,1.4,.4,1)}
+@keyframes land{from{transform:scale(.97)}to{transform:none}}
+.spinbtn{display:block;width:100%;margin-top:26px;background:var(--ink);color:var(--bg);border:0;border-radius:8px;padding:16px;font-weight:800;font-size:1.1rem;letter-spacing:-0.01em}
+.spinbtn:disabled{opacity:.35;cursor:default}
+
+/* result */
+.result{margin-top:36px;border-top:3px solid var(--ink);padding-top:18px}
+.result[hidden],section[hidden]{display:none}
+.cat{font-size:.85rem;font-weight:600;color:var(--soft);margin:0 0 6px}
+.title{font-size:1.6rem;font-weight:800;letter-spacing:-0.02em;line-height:1.15;margin:0 0 18px}
+.prompts{margin:0 0 22px;padding-left:1.2em}
+.prompts li{margin:0 0 10px;font-weight:500}
+.actions{display:flex;flex-direction:column;gap:10px}
+.primary{background:var(--ink);color:var(--bg);border:0;border-radius:8px;padding:13px 18px;font-weight:700;text-align:center;text-decoration:none;display:block}
+.primary:disabled{opacity:.4;cursor:default}
+.secondary{background:none;color:var(--ink);border:2px solid var(--ink);border-radius:8px;padding:11px 16px;font-weight:700;text-align:center;text-decoration:none;display:block}
+.textlink{font-size:.9rem;font-weight:600;color:var(--ink);margin-top:4px}
+.done-note{font-size:.85rem;color:var(--soft);margin:18px 0 0}
+label{display:block;font-weight:700;font-size:.95rem;margin:26px 0 8px}
+textarea{width:100%;min-height:84px;font:inherit;font-size:1rem;color:var(--ink);background:var(--panel);border:1.5px solid var(--line);border-radius:8px;padding:12px;resize:vertical}
+textarea:focus{border-color:var(--ink);outline:none}
+.row{display:flex;gap:12px;align-items:center;margin-top:12px;flex-wrap:wrap}
+.row .primary,.row .secondary{display:inline-block}
+.status{font-size:.85rem;color:var(--soft)}
+
+/* briefing */
+#brief{margin-top:8px}
+.back{margin-bottom:18px}
+.bmeta{font-size:.85rem;font-weight:600;color:var(--soft);margin:0 0 6px}
+#brief h2.bt{font-size:1.9rem;font-weight:800;letter-spacing:-0.03em;line-height:1.1;margin:0 0 20px}
+.bbody{font-size:1rem;line-height:1.65}
+.bbody h3{font-size:1.1rem;font-weight:800;letter-spacing:-0.01em;margin:30px 0 8px;padding-top:14px;border-top:2px solid var(--ink)}
+.bbody p{margin:0 0 14px}
+.bbody ul{margin:0 0 14px;padding-left:1.1em}
+.bbody li{margin:0 0 8px}
+.thinking{color:var(--soft);font-weight:600}
+.bnote{font-size:.8rem;color:var(--soft);margin:24px 0 0}
+
+/* panels */
+section.panel{margin-top:40px}
+.panel h2{font-size:1.25rem;font-weight:800;margin:0 0 4px;letter-spacing:-0.01em}
+.sum{font-size:.85rem;color:var(--soft);margin:0 0 18px}
+.entry{padding:14px 0;border-top:1px solid var(--line)}
+.entry h3{font-size:1rem;font-weight:700;margin:0 0 2px}
+.entry .meta{font-size:.78rem;color:var(--soft);margin:0 0 6px}
+.entry p.k{margin:0;font-size:.95rem}
+.empty{color:var(--soft);font-size:.95rem}
+#topList h3{font-size:1rem;font-weight:800;margin:26px 0 8px}
+#topList ul{list-style:none;margin:0;padding:0}
+#topList li button{background:none;border:0;border-top:1px solid var(--line);width:100%;text-align:left;padding:9px 0;color:var(--ink);font-size:.92rem;font-weight:500;display:flex;justify-content:space-between;gap:12px}
+#topList li button span{color:var(--soft);font-size:.8rem;font-weight:600;white-space:nowrap}
+.settings input[type=text],.settings input[type=password]{width:100%;font:inherit;font-size:.95rem;color:var(--ink);background:var(--panel);border:1.5px solid var(--line);border-radius:8px;padding:10px 12px}
+.settings input:focus{border-color:var(--ink);outline:none}
+fieldset{border:0;padding:0;margin:0}
+legend{font-weight:700;font-size:.95rem;margin:0 0 10px;padding:0}
+.radio{display:flex;gap:10px;align-items:flex-start;font-weight:500;font-size:.95rem;margin:0 0 10px}
+.radio input{margin-top:4px;accent-color:var(--ink)}
+.help{font-size:.8rem;color:var(--soft);margin:6px 0 0}
+footer{margin-top:44px;display:flex;flex-direction:column;align-items:center;gap:8px}
+footer .mark{width:22px;height:22px}
+.store-note{font-size:.75rem;color:var(--soft);text-align:center;margin:0}
+.tagrow{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-top:10px}
+.tagrow .tag{margin:0}
+.depth{font-weight:800;font-size:.95rem;white-space:nowrap;letter-spacing:-0.01em}
+.redraw{display:block;width:100%;margin-top:10px;background:none;border:0;color:var(--ink);font-weight:600;font-size:.9rem;text-decoration:underline;text-underline-offset:3px;padding:6px}
+.redraw:disabled{color:var(--soft);text-decoration:none;cursor:default}
+.lockmsg{font-size:.85rem;color:var(--soft);text-align:center;margin:8px 0 0}
+.map{margin:0 0 28px}
+.map h4{font-size:.85rem;font-weight:700;margin:16px 0 6px;display:flex;justify-content:space-between;gap:10px}
+.map h4 span{color:var(--soft);font-weight:600}
+.grid{display:flex;flex-wrap:wrap;gap:4px}
+.sq{width:16px;height:16px;border:1.5px solid var(--ink);border-radius:3px;background:none;padding:0}
+.sq.on{background:var(--ink)}
+.sq.now{outline:2px solid var(--ink);outline-offset:2px}
+.map-note{font-size:.8rem;color:var(--soft);margin:0 0 4px}
+@media (prefers-reduced-motion:reduce){.front.flip,.front.landed{animation:none}}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <symbol id="rh" viewBox="0 0 40 40"><ellipse cx="20" cy="17" rx="17" ry="9" fill="none" stroke="currentColor" stroke-width="2.6"/><ellipse cx="20" cy="21" rx="11.5" ry="6" fill="none" stroke="currentColor" stroke-width="2.6"/><ellipse cx="20" cy="24.5" rx="6.5" ry="3.4" fill="currentColor"/></symbol>
+</defs></svg>
+<div class="wrap">
+  <div id="home">
+    <header>
+      <div class="brand"><svg class="mark" aria-hidden="true"><use href="#rh"/></svg><h1>Rabbit Hole</h1></div>
+      <nav>
+        <button class="linkbtn" id="topBtn" aria-expanded="false">Topics</button>
+        <button class="linkbtn" id="logBtn" aria-expanded="false">Log</button>
+        <button class="linkbtn" id="setBtn" aria-expanded="false">Settings</button>
+      </nav>
+    </header>
+    <div class="tagrow"><p class="tag">Pick a card. Go down it. Write down what you found.</p><span class="depth" id="depth" hidden></span></div>
+
+    <div class="deck" aria-live="polite">
+      <div class="card b1"></div>
+      <div class="card b2"></div>
+      <div class="card front" id="front">
+        <p class="kc" id="kc"></p>
+        <p class="kt" id="kt">Shuffle to draw a topic</p>
+        <div class="kf"><span id="kn"></span><svg class="mark" aria-hidden="true"><use href="#rh"/></svg></div>
+      </div>
+    </div>
+    <button class="spinbtn" id="spin" disabled>Shuffle</button>
+    <p class="lockmsg" id="lockMsg" hidden></p>
+    <button class="redraw" id="redraw" hidden></button>
+
+    <section class="result" id="result" hidden>
+      <p class="cat" id="rCat"></p>
+      <h2 class="title" id="rTitle"></h2>
+      <ol class="prompts" id="rPrompts"></ol>
+      <div class="actions">
+        <button class="primary" id="readBtn" hidden>Read the briefing</button>
+        <a class="secondary" id="chatLink" target="_blank" rel="noopener">Research it in a Claude chat</a>
+        <a class="textlink" id="rSearch" target="_blank" rel="noopener">Search the web instead</a>
+      </div>
+      <p class="done-note" id="rDone" hidden></p>
+      <label for="take">Your one-line takeaway</label>
+      <textarea id="take" maxlength="400" placeholder="The thing you would tell someone at lunch"></textarea>
+      <div class="row">
+        <button class="primary" id="markDone" disabled>Mark done</button>
+        <span class="status" id="status"></span>
+      </div>
+    </section>
+
+    <section class="panel" id="log" hidden>
+      <h2>Log</h2>
+      <p class="sum" id="logSum"></p>
+      <div class="map" id="map"></div>
+      <div id="logList"></div>
+    </section>
+
+    <section class="panel" id="topics" hidden>
+      <h2>Topics</h2>
+      <p class="sum" id="topSum"></p>
+      <div id="topList"></div>
+    </section>
+
+    <section class="panel settings" id="settings" hidden>
+      <h2>Settings</h2>
+      <fieldset>
+        <legend>How topics are drawn</legend>
+        <label class="radio"><input type="radio" name="weight" value="category"> Every category equally likely</label>
+        <label class="radio"><input type="radio" name="weight" value="topic"> Every topic equally likely (bigger categories come up more)</label>
+      </fieldset>
+      <div id="sheetSettings">
+        <label for="syncUrl">Google Sheet sync address</label>
+        <input type="text" id="syncUrl" placeholder="https://script.google.com/macros/s/.../exec" autocomplete="off" spellcheck="false">
+        <label for="syncToken">Sync token</label>
+        <input type="password" id="syncToken" autocomplete="off" spellcheck="false">
+        <p class="help">Both are stored on this device only, never in the site itself. Enter them once on each device.</p>
+        <div class="row">
+          <button class="primary" id="saveSet">Save and sync</button>
+          <button class="secondary" id="syncNow">Sync now</button>
+          <span class="status" id="syncStatus"></span>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <section id="brief" hidden>
+    <button class="linkbtn back" id="backBtn">Back to the deck</button>
+    <p class="bmeta" id="bMeta"></p>
+    <h2 class="bt" id="bTitle"></h2>
+    <div class="bbody" id="bBody"></div>
+    <div class="row" id="bCtl"></div>
+    <label for="refl">Your reflection</label>
+    <textarea id="refl" placeholder="Where does this connect for you?"></textarea>
+    <div class="row"><button class="primary" id="saveRefl">Save reflection</button><span class="status" id="reflStatus"></span></div>
+    <p class="bnote">Written by Claude from its own knowledge, not a live search. Check the flagged claims before you use them.</p>
+  </section>
+
+  <footer><svg class="mark" aria-hidden="true"><use href="#rh"/></svg><p class="store-note" id="storeNote"></p></footer>
+</div>
+<script>
+(function(){
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const slug = s => s.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+  const fmt = (ms,long) => new Date(ms).toLocaleDateString('en-AU',{day:'numeric',month:long?'long':'short',year:long?undefined:'numeric'});
+  const LK='tangent-log-v1', SK='tangent-settings-v1', PK='rabbithole-pages-v1';
+  const load = (k,d) => { try{ const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; }catch(e){ return d; } };
+  const store = (k,v) => { try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} };
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  let CATS=[], topics=[], byId={}, byCat=[], N=0;
+  let log = load(LK, {});
+  let pagesLocal = load(PK, {});
+  let settings = Object.assign({weight:'category', url:'', token:''}, load(SK, {}));
+  let current=null, spinning=false;
+  const XK='rabbithole-draw-v1';
+  let draw = load(XK, {pending:null, week:'', used:false});
+  let db=null, uid=null, logRef=null, sample=null, ctl=null;
+  const catLabel = t => CATS[t.c] + (t.l ? ', ' + t.l : '');
+  function weekKey(){ const x=new Date(); x.setHours(0,0,0,0); x.setDate(x.getDate()-((x.getDay()+6)%7)); return x.getFullYear()+'-'+(x.getMonth()+1)+'-'+x.getDate(); }
+  function saveDraw(){ store(XK, draw); }
+  function doneCount(){ return Object.keys(log).filter(id=>byId[id]).length; }
+  const MILES=[10,25,50,100,200,300,400];
+  function renderDepth(){ const n=doneCount(); $('depth').hidden = !n; $('depth').textContent = n + (n===1?' metre down':' metres down'); }
+  function renderGate(){
+    if(draw.week!==weekKey()){ draw.week=weekKey(); draw.used=false; saveDraw(); }
+    const p = draw.pending && byId[draw.pending] && !log[draw.pending] ? byId[draw.pending] : null;
+    if(!p && draw.pending){ draw.pending=null; saveDraw(); }
+    if(spinning) return;
+    $('spin').disabled = !!p;
+    $('spin').textContent = p ? 'Finish this one first' : (current ? 'Shuffle again' : 'Shuffle');
+    $('lockMsg').hidden = !p || (current===p);
+    if(p && current!==p) $('lockMsg').innerHTML = 'Your current draw is <button class="linkbtn" id="goPending">'+esc(p.t)+'</button>';
+    const gp=$('goPending'); if(gp) gp.onclick=()=>{ card(p,'Your topic'); show(p); $('result').scrollIntoView({behavior:'smooth',block:'start'}); };
+    $('redraw').hidden = !p;
+    $('redraw').disabled = draw.used;
+    $('redraw').textContent = draw.used ? 'Redraw used this week. Back on Monday.' : 'Redraw (one left this week)';
+  }
+
+  // ---------- research prompt ----------
+  function promptFor(t){
+    return `Write a quick research briefing, about 800 words, for a curious Australian secondary teacher on this topic: "${t.t}" (category: ${catLabel(t)}).
+
+Questions to cover along the way:
+${t.p.map(p=>'- '+p).join('\n')}
+
+Rules: Australian spelling. Plain, direct prose, no preamble, no sign-off. Never use em dashes. Only name people, works and dates you are confident are real; leave out a detail rather than guess. For religious topics, describe the history and what people believed, and do not add theological interpretation or application.
+
+Use Markdown with exactly these section headings, in this order:
+## The story
+Three or four short paragraphs: what happened or what the idea is, with context.
+## Key people and sources
+Four to six bullets. Each: a person or a real work (with year), then one line on why it matters.
+## Critiques and tensions
+Three bullets. Each states a claim, then the strongest counterpoint.
+## Analogies for teaching
+Three bullets. Each: the parallel, then one concrete classroom or school use.
+## Analogies for life
+Three bullets. Each: the parallel, then where it might apply.
+## Check before you trust
+Three to five bullets naming the specific claims above that are most likely to be contested, simplified or wrong.`;
+  }
+  const clean = s => s.replace(/\s*\u2014\s*/g, ', ').replace(/ \u2013 /g, ', ');
+  function md(src){
+    const lines = clean(src).split('\n'); let h='', inList=false, para=[];
+    const inline = s => esc(s).replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/(^|[^*])\*(?!\s)(.+?)\*/g,'$1<em>$2</em>');
+    const flush = () => { if(para.length){ h+='<p>'+inline(para.join(' '))+'</p>'; para=[]; } };
+    for(const raw of lines){
+      const l = raw.trim();
+      if(/^#{1,4}\s/.test(l)){ flush(); if(inList){h+='</ul>';inList=false;} h+='<h3>'+inline(l.replace(/^#+\s*/,''))+'</h3>'; }
+      else if(/^[-*]\s+/.test(l)){ flush(); if(!inList){h+='<ul>';inList=true;} h+='<li>'+inline(l.replace(/^[-*]\s+/,''))+'</li>'; }
+      else if(!l){ flush(); if(inList){h+='</ul>';inList=false;} }
+      else { if(inList){h+='</ul>';inList=false;} para.push(l); }
+    }
+    flush(); if(inList) h+='</ul>';
+    return h;
+  }
+
+  // ---------- pages (saved briefings) ----------
+  const pageRef = id => (db && uid) ? db.doc('data/users/' + uid + '/page-' + id) : null;
+  async function getPage(id){
+    const r = pageRef(id);
+    if(r){ try{ const s = await r.get(); if(s.exists) return s.data(); }catch(e){} }
+    return pagesLocal[id] || null;
+  }
+  async function putPage(id, data){
+    pagesLocal[id] = Object.assign({}, pagesLocal[id] || {}, data); store(PK, pagesLocal);
+    const r = pageRef(id);
+    if(r){ await r.set(pagesLocal[id]); }
+  }
+
+  // ---------- deck ----------
+  const front = $('front');
+  function card(t, note){
+    $('kc').textContent = t ? catLabel(t) : '';
+    $('kt').textContent = t ? t.t : '';
+    $('kn').textContent = note || '';
+  }
+  function flip(cls){ front.classList.remove('flip','landed'); void front.offsetWidth; front.classList.add(cls); }
+  function pick(){
+    let c;
+    if(settings.weight==='topic'){ let r=Math.random()*N; c=CATS.length-1; for(let i=0;i<CATS.length;i++){ r-=byCat[i].length; if(r<0){c=i;break;} } }
+    else c = Math.floor(Math.random()*CATS.length);
+    const list = byCat[c]; return list[Math.floor(Math.random()*list.length)];
+  }
+  function shuffle(target){
+    return new Promise(res=>{
+      const steps = reduce ? 4 : 34, seq = [];
+      for(let i=0;i<steps;i++) seq.push(topics[Math.floor(Math.random()*N)]);
+      seq.push(target);
+      const total = reduce ? 500 : 3000, start = performance.now(); let last=-1;
+      const ease = x => 1 - Math.pow(1-x, 3);
+      const step = now => {
+        const x = Math.min(1, (now-start)/total), k = Math.min(seq.length-1, Math.floor(ease(x)*(seq.length-1) + (x>=1?1:0)));
+        if(k!==last){ last=k; card(seq[k]); flip('flip'); }
+        if(x<1) requestAnimationFrame(step); else { card(target,'Your topic'); flip('landed'); res(); }
+      };
+      requestAnimationFrame(step);
+    });
+  }
+
+  // ---------- result ----------
+  function show(t){
+    current=t;
+    $('rCat').textContent=catLabel(t);
+    $('rTitle').textContent=t.t;
+    $('rPrompts').innerHTML=t.p.map(p=>`<li>${esc(p)}</li>`).join('');
+    $('rSearch').href='https://www.google.com/search?q='+encodeURIComponent(t.t);
+    $('chatLink').href='https://claude.ai/new?q='+encodeURIComponent(promptFor(t));
+    $('readBtn').hidden = !sample;
+    $('readBtn').textContent = 'Read the briefing';
+    getPage(t.id).then(p=>{ if(current===t && p && p.md) $('readBtn').textContent='Open saved briefing'; });
+    const e=log[t.id];
+    $('take').value = e ? e.k : '';
+    $('rDone').hidden=!e;
+    if(e) $('rDone').textContent='Done on '+fmt(e.t,true)+'. Edit the takeaway below if you learned more.';
+    $('markDone').textContent = e ? 'Update takeaway' : 'Mark done';
+    $('status').textContent='';
+    $('markDone').disabled = !$('take').value.trim();
+    $('result').hidden=false;
+  }
+  $('take').addEventListener('input',()=>{ $('markDone').disabled=!$('take').value.trim(); });
+
+  // ---------- briefing view ----------
+  function openBrief(){ $('home').hidden=true; $('brief').hidden=false; window.scrollTo(0,0); }
+  function closeBrief(){ if(ctl) ctl.abort(); $('brief').hidden=true; $('home').hidden=false; $('result').scrollIntoView({block:'start'}); }
+  $('backBtn').addEventListener('click', closeBrief);
+  function briefControls(state){
+    const c=$('bCtl'); c.innerHTML='';
+    const b=(label,cls,fn)=>{ const x=document.createElement('button'); x.className=cls; x.textContent=label; x.onclick=fn; c.appendChild(x); };
+    if(state==='writing') b('Stop','secondary',()=>ctl && ctl.abort());
+    if(state==='done') b('Write a fresh version','secondary',()=>generate(current));
+    if(state==='failed') b('Try again','primary',()=>generate(current));
+  }
+  async function readBriefing(t){
+    $('bMeta').textContent=catLabel(t); $('bTitle').textContent=t.t; $('reflStatus').textContent='';
+    openBrief();
+    const p = await getPage(t.id);
+    $('refl').value = (p && p.reflection) || '';
+    if(p && p.md){ $('bBody').innerHTML = md(p.md); briefControls('done'); }
+    else generate(t);
+  }
+  const errCopy = code => ({not_granted:'Claude access was not allowed for this page. Use the Claude chat link instead.', rate_limited:'Too many requests just now. Wait a minute and try again.', cancelled:'Stopped.'}[code] || 'The briefing could not be written. Try again, or use the Claude chat link.');
+  async function generate(t){
+    if(!sample) return;
+    ctl = new AbortController();
+    $('bBody').innerHTML='<p class="thinking">Writing your briefing. This usually takes under a minute.</p>';
+    briefControls('writing');
+    try{
+      const {text} = await sample(promptFor(t), { signal: ctl.signal, cache: false, onText: ({text}) => { if(current===t) $('bBody').innerHTML = md(text); } });
+      const cleaned = clean(text);
+      if(current===t){ $('bBody').innerHTML = md(cleaned); briefControls('done'); }
+      await putPage(t.id, {md: cleaned, at: Date.now(), reflection: $('refl').value});
+      if(current===t) $('readBtn').textContent='Open saved briefing';
+    }catch(e){
+      if(current!==t) return;
+      $('bBody').innerHTML = (e && e.text ? md(e.text) : '') + `<p class="thinking">${esc(errCopy(e && e.code))}</p>`;
+      briefControls(e && e.text ? 'done' : 'failed');
+    }
+  }
+  $('readBtn').addEventListener('click', ()=>current && readBriefing(current));
+  $('saveRefl').addEventListener('click', async ()=>{
+    if(!current) return;
+    $('reflStatus').textContent='Saving';
+    try{ await putPage(current.id, {reflection: $('refl').value}); $('reflStatus').textContent='Saved'; }
+    catch(e){ $('reflStatus').textContent='Saved on this device only'; }
+  });
+
+  // ---------- log and topics ----------
+  function renderMap(){
+    const done = doneCount();
+    $('map').innerHTML = '<p class="map-note">Each square is a topic. Tap one to open it.</p>' + CATS.map((c,i)=>{
+      const list = byCat[i], got = list.filter(t=>log[t.id]).length;
+      return `<h4>${esc(c)}<span>${got===list.length?'Complete':got?got+' done':''}</span></h4><div class="grid">` +
+        list.map(t=>`<button class="sq${log[t.id]?' on':''}${current===t?' now':''}" data-id="${t.id}" aria-label="${esc(t.t)}${log[t.id]?', done':''}" title="${esc(t.t)}"></button>`).join('') + '</div>';
+    }).join('');
+  }
+  $('map').addEventListener('click', e=>{
+    const b=e.target.closest('.sq'); if(!b || spinning) return;
+    const t=byId[b.dataset.id]; card(t,'Chosen from the map'); show(t); renderGate();
+    $('result').scrollIntoView({behavior:'smooth',block:'start'});
+  });
+  function renderLog(){
+    if(N){ renderTopics(); renderMap(); renderDepth(); renderGate(); }
+    const ids=Object.keys(log).filter(id=>byId[id]).sort((a,b)=>log[b].t-log[a].t);
+    $('logBtn').textContent= ids.length ? `Log (${ids.length})` : 'Log';
+    const per=CATS.map((c,i)=>({c,n:ids.filter(id=>byId[id].c===i).length})).filter(x=>x.n);
+    $('logSum').textContent = ids.length ? `${ids.length} done. `+per.map(x=>`${x.c} ${x.n}`).join(', ')+'.' : '';
+    $('logList').innerHTML = ids.length ? ids.map(id=>{
+      const t=byId[id], e=log[id];
+      return `<div class="entry"><h3>${esc(t.t)}</h3><p class="meta">${esc(catLabel(t))}, ${fmt(e.t)}</p><p class="k">${esc(e.k)}</p></div>`;
+    }).join('') : '<p class="empty">Nothing yet. Draw a card, go down it, and write your first takeaway.</p>';
+  }
+  function renderTopics(){
+    $('topSum').textContent = 'Tap one to open it.';
+    $('topList').innerHTML = CATS.map((c,i)=>{
+      const list = byCat[i].slice().sort((a,b)=>((a.l||'')+a.t).localeCompare((b.l||'')+b.t));
+      return `<h3>${esc(c)}</h3><ul>` + list.map(t=>`<li><button data-id="${t.id}">${esc(t.t)}<span>${[t.l, log[t.id]?'Done':''].filter(Boolean).join(', ')}</span></button></li>`).join('') + '</ul>';
+    }).join('');
+  }
+  $('topList').addEventListener('click', e=>{
+    const b = e.target.closest('button[data-id]'); if(!b || spinning) return;
+    const t = byId[b.dataset.id]; card(t,'Chosen from the list'); show(t); renderGate();
+    history.replaceState(null,'','?t='+t.id);
+    $('result').scrollIntoView({behavior:'smooth',block:'start'});
+  });
+
+  // ---------- log sync: Claude account first, else Google Sheet ----------
+  const sheetOn = () => !logRef && settings.url && settings.token;
+  function note(){
+    $('storeNote').textContent = logRef ? 'Saved to your Claude account.' : sheetOn() ? 'Syncing with your Google Sheet.' : 'Saved on this device only.';
+  }
+  function mergeIn(remote){
+    const push=[];
+    for(const id in log){ const r=remote[id]; if(!r || (log[id].u||log[id].t) > (r.u||r.t)) push.push(id); }
+    for(const id in remote){ const l=log[id]; if(!l || (remote[id].u||remote[id].t) > (l.u||l.t)) log[id]=remote[id]; }
+    store(LK, log); return push;
+  }
+  async function sync(){
+    if(logRef){
+      const s = await logRef.get();
+      mergeIn(s.exists ? (s.data().entries||{}) : {});
+      await logRef.set({entries: log});
+    } else if(sheetOn()){
+      const res = await fetch(settings.url + '?token=' + encodeURIComponent(settings.token), {redirect:'follow'});
+      const body = await res.json(); if(body.error) throw new Error(body.error);
+      const push = mergeIn(body.entries||{});
+      if(push.length){
+        const rows = push.filter(id=>byId[id]).map(id=>({id, title:byId[id].t, category:catLabel(byId[id]), t:log[id].t, u:log[id].u||log[id].t, k:log[id].k}));
+        const r2 = await fetch(settings.url, {method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body:JSON.stringify({token:settings.token, rows}), redirect:'follow'});
+        const b2 = await r2.json(); if(b2.error) throw new Error(b2.error);
+      }
+    } else return 'off';
+    renderLog(); if(current && !$('result').hidden) show(current);
+    return 'ok';
+  }
+  async function trySync(el){
+    if(!logRef && !sheetOn()){ if(el) el.textContent = el===$('status') ? 'Saved on this device' : 'Add the address and token first.'; return; }
+    if(el) el.textContent='Saving';
+    try{ await sync(); if(el) el.textContent='Saved'; }
+    catch(e){ if(el) el.textContent = e.message==='bad token' ? 'The Sheet rejected the token. Check it matches.' : 'Could not sync. Saved on this device for now.'; }
+  }
+
+  // ---------- events ----------
+  $('spin').addEventListener('click', async ()=>{
+    if(spinning || !N) return;
+    if(draw.pending && byId[draw.pending] && !log[draw.pending]) return;
+    spinning=true; $('spin').disabled=true;
+    const t = pick();
+    await shuffle(t);
+    spinning=false;
+    draw.pending = t.id; saveDraw();
+    show(t); renderGate();
+    history.replaceState(null,'','?t='+t.id);
+  });
+  $('redraw').addEventListener('click', async ()=>{
+    if(spinning || draw.used || !draw.pending) return;
+    draw.used = true; draw.pending = null; saveDraw();
+    $('redraw').hidden = true;
+    const t = pick(); spinning=true; $('spin').disabled=true;
+    await shuffle(t);
+    spinning=false; draw.pending=t.id; saveDraw();
+    show(t); renderGate();
+    history.replaceState(null,'','?t='+t.id);
+  });
+  $('markDone').addEventListener('click', async ()=>{
+    if(!current) return;
+    const k=$('take').value.trim(); if(!k) return;
+    const prev=log[current.id], now=Date.now();
+    log[current.id]={t:prev?prev.t:now, u:now, k};
+    store(LK,log); renderLog(); show(current);
+    const n = doneCount();
+    await trySync($('status'));
+    if(!prev && MILES.includes(n)) $('status').textContent = 'Saved. ' + n + ' metres down.';
+  });
+  const toggle = (btn, sec) => btn.addEventListener('click',()=>{
+    const open=$(sec).hidden; $(sec).hidden=!open; btn.setAttribute('aria-expanded',String(open));
+    if(open) $(sec).scrollIntoView({behavior:'smooth',block:'start'});
+  });
+  toggle($('logBtn'),'log'); toggle($('topBtn'),'topics'); toggle($('setBtn'),'settings');
+  document.querySelectorAll('input[name=weight]').forEach(r=>{
+    r.checked = r.value===settings.weight;
+    r.addEventListener('change',()=>{ settings.weight=r.value; store(SK,settings); });
+  });
+  $('syncUrl').value=settings.url; $('syncToken').value=settings.token;
+  $('saveSet').addEventListener('click',()=>{
+    settings.url=$('syncUrl').value.trim(); settings.token=$('syncToken').value.trim();
+    store(SK,settings); note(); trySync($('syncStatus'));
+  });
+  $('syncNow').addEventListener('click',()=>trySync($('syncStatus')));
+
+  // ---------- start ----------
+  function start(d){
+    CATS=d.cats; topics=d.topics.map(t=>Object.assign({id:slug(t.t)},t)); N=topics.length;
+    topics.forEach(t=>byId[t.id]=t);
+    byCat = CATS.map((_,i)=>topics.filter(t=>t.c===i));
+    renderLog(); note();
+    $('spin').disabled=false;
+    const q=new URLSearchParams(location.search).get('t');
+    const pend = draw.pending && byId[draw.pending] && !log[draw.pending] ? byId[draw.pending] : null;
+    if(pend){ card(pend,'Your topic'); show(pend); }
+    else if(q && byId[q]){ card(byId[q],'Your topic'); show(byId[q]); }
+    renderGate();
+    trySync(null);
+    connectClaude();
+  }
+  async function connectClaude(){
+    try{
+      if(!window.claude || !window.claude.use) return;
+      const [d, u, s] = await Promise.all([window.claude.use('db'), window.claude.use('user'), window.claude.use('sample')]);
+      if(s){ sample = s; if(current) $('readBtn').hidden=false; }
+      if(d && u){
+        const id = await u.id();
+        if(id){ db=d; uid=id; logRef = db.doc('data/users/' + uid + '/log'); $('sheetSettings').hidden=true; await sync(); }
+      }
+      note();
+      if(current) show(current);
+    }catch(e){ logRef=null; note(); }
+  }
+  /*DATA*/fetch('topics.json').then(r=>r.json()).then(start).catch(()=>{ $('storeNote').textContent='Could not load the topic list. Check your connection and reload.'; });
+
+  /*SW*/if('serviceWorker' in navigator && location.protocol==='https:'){ navigator.serviceWorker.register('sw.js').catch(()=>{}); }
+})();
+</script>
+</body>
+</html>
